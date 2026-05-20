@@ -1,0 +1,49 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+.venv_realtime/
+
+# Environment variables
+.env
+
+# =========================
+# Node.js / Frontend
+# =========================
+node_modules/
+dist/
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+
+# =========================
+# Project outputs
+# =========================
+backend/results/
+backend/data/
+
+# =========================
+# Cache / Coverage
+# =========================
+.cache/
+coverage/
+
+# =========================
+# Optional cleanup
+# =========================
+frontend/README.md
+pyrightconfig.json
