@@ -20,20 +20,29 @@ You are an expert in L2 pragmatics assessment.
 
 Analyze the following dialogue between a student and a professor.
 
-Focus on pragmatic appropriateness, especially:
-- Contextual Appropriateness: whether the student's language fits the professor-student relationship
-- Pragmatic Appropriateness: tone, directness, mitigation, politeness, phrasing
-- Response Appropriateness: whether the student responds appropriately to the professor's questions or cues
+Provide formative, intermediate feedback after SP1 without numeric scores or scoring fields.
+Use these four criteria, with pragmatic appropriateness as the primary focus:
+- Contextual Appropriateness: whether the student's language fits the situation, relationship, and social context
+- Pragmatic Appropriateness: whether the student expresses the intended meaning with appropriate tone, directness, mitigation, politeness, and phrasing
+- Response Appropriateness: whether the student responds appropriately and relevantly to the professor's turns, questions, and cues
+- Task Fulfillment (supporting criterion): whether the student clearly communicates the intended purpose and provides enough relevant information for the professor to respond appropriately
+
+Task Fulfillment is supporting evidence only, not an equal or dominant assessment category.
+Do not treat successful task completion alone as evidence of pragmatic appropriateness.
+A clear request can still be pragmatically inappropriate when it is too direct or unsuitable for the professor-student relationship.
+Identify Task Fulfillment as a priority issue only when missing or unclear information substantially weakens the communicative purpose or prevents the professor from responding appropriately.
 
 Do NOT focus mainly on grammar or vocabulary.
 Do NOT focus on greetings or closings unless they are the only issue.
 
-Your feedback must be concrete and evidence-based.
+Select no more than two issues with the greatest effect on pragmatic appropriateness and communicative success; do not invent issues to fill the lists.
+Base feedback specifically on what the student actually said, not generic advice that could apply to any learner.
 For each issue:
 - identify the pragmatic problem
-- include an exact student utterance from the dialogue when possible
-- explain why it is a problem in this context
-- give a practical fix the student can reuse
+- support it with an exact student utterance or a clearly missing response or essential piece of information required by this interaction
+- in the example field, quote the exact utterance or explicitly describe the missing response/information without fabricating a quotation
+- explain why it matters in this specific professor-student context
+- give a practical strategy the student can apply immediately in SP2
 
 Then create a short reenacted dialogue that demonstrates a better interaction.
 
@@ -50,7 +59,9 @@ Requirements:
 - exactly 4 turns
 - short sentences, max 10–12 words each
 - natural conversational language
-- focus on improving the key pragmatic issue
+- directly demonstrate the highest-priority strategy identified in the feedback
+- preserve the original communicative purpose and context
+- do not introduce unrelated people, problems, reasons, facts, or circumstances unsupported by the original transcript
 - do NOT summarize — reenact the interaction
 
 Return ONLY valid JSON in this exact structure:
@@ -61,7 +72,7 @@ Return ONLY valid JSON in this exact structure:
     {{
       "type": "<short issue type>",
       "description": "<1-2 sentences explaining the pragmatic issue>",
-      "example": "<exact student utterance from the dialogue>",
+      "example": "<exact student utterance or explicitly identified missing response/essential information>",
       "fix": "<specific strategy the student should use next time>"
     }}
   ],

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import './App.css'
 import professorImage from './assets/RTS_professor.png'
+import LiveAvatarFeedback from './components/LiveAvatarFeedback'
 
 function App() {
   const [isConnected, setIsConnected] = useState(false)
@@ -8,9 +9,8 @@ function App() {
   const [micPermission, setMicPermission] = useState('prompt') // 'prompt' | 'granted' | 'denied'
   const [transcript, setTranscript] = useState([])
   const [analysis, setAnalysis] = useState(null)
-  const [videoUrl, setVideoUrl] = useState(null)
-  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false)
-  const [videoError, setVideoError] = useState(null)
+  const [feedbackRequest, setFeedbackRequest] = useState(null)
+  const [feedbackComplete, setFeedbackComplete] = useState(false)
   const [isSp2Active, setIsSp2Active] = useState(false)
   const [isSp2Speaking, setIsSp2Speaking] = useState(false)
   const [sp2Transcript, setSp2Transcript] = useState([])
@@ -131,10 +131,12 @@ function App() {
           pendingStopRef.current = false
           cleanupSession()
         }
-        const videoDialogue = msg.data?.video_dialogue
-        if (videoDialogue) {
-          generateVideo(videoDialogue)
-        }
+        setFeedbackComplete(false)
+        // Every result owns a fresh controller/cache, even if its text repeats.
+        setFeedbackRequest(previous => ({
+          id: (previous?.id ?? 0) + 1,
+          dialogue: msg.data?.video_dialogue,
+        }))
       }
     }
 
@@ -181,27 +183,6 @@ function App() {
   }
 
   const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
-
-  async function generateVideo(videoDialogue) {
-    if (!videoDialogue) return
-    setIsGeneratingVideo(true)
-    setVideoError(null)
-    setVideoUrl(null)
-    try {
-      const res = await fetch(`${API_URL}/generate-video`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video_dialogue: videoDialogue }),
-      })
-      if (!res.ok) throw new Error(`Server error: ${res.status}`)
-      const data = await res.json()
-      setVideoUrl(data.video_url)
-    } catch (err) {
-      setVideoError(err.message)
-    } finally {
-      setIsGeneratingVideo(false)
-    }
-  }
 
   async function startSp2() {
     // Always re-acquire mic stream (SP1 stream was stopped during cleanup)
@@ -284,9 +265,8 @@ function App() {
   function startPractice() {
     setTranscript([])
     setAnalysis(null)
-    setVideoUrl(null)
-    setVideoError(null)
-    setIsGeneratingVideo(false)
+    setFeedbackRequest(null)
+    setFeedbackComplete(false)
     setSp2Transcript([])
     setEvaluation(null)
     setIsSp2Active(false)
@@ -533,7 +513,7 @@ function App() {
   }
 
   if (page === 'video') {
-    const canProceed = analysis // && !isGeneratingVideo
+    const canProceed = Boolean(analysis && feedbackComplete)
     return (
       <div className="speaking-app">
         {progressBar}
@@ -542,77 +522,16 @@ function App() {
         <h1 style={{ marginBottom: 0 }}>AI Video Feedback</h1>
 
         {/* 1 — Video Feedback card */}
-        <div style={{
-          border: `1.5px solid ${isGeneratingVideo ? '#d1fae5' : videoUrl ? '#2ecc71' : '#e5e7eb'}`,
-          borderRadius: '14px',
-          padding: '28px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
-          background: isGeneratingVideo ? '#f0fdf4' : '#fff',
-          transition: 'border-color 0.4s, background 0.4s',
-        }}>
-          {isGeneratingVideo && (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', textAlign: 'center' }}>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  border: '2px solid #d1fae5',
-                  borderTop: '2px solid #2ecc71',
-                  borderRadius: '50%',
-                  animation: 'vf-spin 0.8s linear infinite',
-                  flexShrink: 0,
-                }} />
-                <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#166534' }}>
-                  Generating your feedback video...
-                </span>
-              </div>
-              <p style={{ margin: 0, fontSize: '0.88rem', color: '#4b7c60', lineHeight: 1.65 }}>
-                Your personalized feedback video is being prepared.<br />
-                While you wait, please review the analysis below.
-              </p>
-            </>
-          )}
-
-          {videoError && (
-            <p style={{ margin: 0, color: '#c0392b', fontSize: '0.92rem', lineHeight: 1.5 }}>
-              Error: {videoError}
-            </p>
-          )}
-
-          {videoUrl && !isGeneratingVideo && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <p style={{ margin: 0, marginBottom: '8px', fontSize: '0.85rem', color: '#6b7280', textAlign: 'center', lineHeight: 1.5 }}>
-                Watch the feedback video, then retry the conversation.
-              </p>
-              <video
-                src={videoUrl}
-                controls
-                style={{ width: '100%', borderRadius: '10px', display: 'block', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Optional: Display the video dialogue script if available in the analysis result */}
-        {analysis?.video_dialogue && (
-          <div
-            style={{
-              marginTop: "20px",
-              padding: "16px",
-              background: "#f8fafc",
-              border: "1px solid #e5e7eb",
-              borderRadius: "12px"
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>Video Script Preview</h3>
-
-            {analysis.video_dialogue.map((line, idx) => (
-              <p key={idx} style={{ margin: "8px 0" }}>
-                <strong>{line.speaker}:</strong> {line.text}
-              </p>
-            ))}
+        {feedbackRequest ? (
+          <LiveAvatarFeedback
+            key={feedbackRequest.id}
+            dialogue={feedbackRequest.dialogue}
+            apiUrl={API_URL}
+            onCompletionChange={setFeedbackComplete}
+          />
+        ) : (
+          <div style={{ border: '1.5px solid #e5e7eb', borderRadius: '14px', padding: '28px', background: '#fff' }}>
+            <p style={{ margin: 0, color: '#6b7280' }}>Waiting for your feedback analysis...</p>
           </div>
         )}
 
@@ -825,21 +744,21 @@ function App() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div>
                       <strong>SP1 (Before)</strong>
-                      <p style={{ margin: 0 }}>
+                      <p style={{ margin: '0 auto', textAlign: 'left', width: '100%', maxWidth: '65ch', lineHeight: 1.6 }}>
                         {evaluation.pragmatics_progress?.sp1 || '—'}
                       </p>
                     </div>
 
                     <div>
                       <strong>SP2 (After)</strong>
-                      <p style={{ margin: 0 }}>
+                      <p style={{ margin: '0 auto', textAlign: 'left', width: '100%', maxWidth: '65ch', lineHeight: 1.6 }}>
                         {evaluation.pragmatics_progress?.sp2 || '—'}
                       </p>
                     </div>
 
                     <div>
                       <strong>Why this matters</strong>
-                      <p style={{ margin: 0 }}>
+                      <p style={{ margin: '0 auto', textAlign: 'left', width: '100%', maxWidth: '65ch', lineHeight: 1.6 }}>
                         {evaluation.pragmatics_progress?.analysis || '—'}
                       </p>
                     </div>
@@ -861,7 +780,7 @@ function App() {
                     <span style={{ display: 'inline-block', alignSelf: 'center', padding: '4px 12px', borderRadius: '999px', fontSize: '0.82rem', fontWeight: 700, color: badgeColor, background: badgeBg, border: `1px solid ${badgeBorder}` }}>
                       {badgeText}
                     </span>
-                    <p style={{ margin: 0, fontSize: '0.95rem', color: '#444', lineHeight: 1.6 }}>{evaluation.feedback_uptake_reason}</p>
+                    <p style={{ margin: '0 auto', textAlign: 'left', width: '100%', maxWidth: '65ch', fontSize: '0.95rem', color: '#444', lineHeight: 1.6 }}>{evaluation.feedback_uptake_reason}</p>
                   </div>
                 )
               })()}
@@ -871,7 +790,7 @@ function App() {
               {/* Overall Summary */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#888' }}>Overall Summary</span>
-                <p style={{ margin: 0, fontSize: '0.95rem', color: '#444', lineHeight: 1.6 }}>{evaluation.evaluation_summary}</p>
+                <p style={{ margin: '0 auto', textAlign: 'left', width: '100%', maxWidth: '65ch', fontSize: '0.95rem', color: '#444', lineHeight: 1.6 }}>{evaluation.evaluation_summary}</p>
               </div>
 
             </div>

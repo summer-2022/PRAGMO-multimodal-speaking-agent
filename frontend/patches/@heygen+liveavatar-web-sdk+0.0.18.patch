@@ -1,0 +1,36 @@
+diff --git a/node_modules/@heygen/liveavatar-web-sdk/lib/index.esm.js b/node_modules/@heygen/liveavatar-web-sdk/lib/index.esm.js
+--- a/node_modules/@heygen/liveavatar-web-sdk/lib/index.esm.js
++++ b/node_modules/@heygen/liveavatar-web-sdk/lib/index.esm.js
+@@ -1346,7 +1346,7 @@
+                     this._sessionEventSocket.send(JSON.stringify({
+                         type: "agent.speak",
+                         event_id: event_id,
+-                        audio: audioChunk,
++                        audio: btoa(audioChunk),
+                     }));
+                 }
+                 this._sessionEventSocket.send(JSON.stringify({
+diff --git a/node_modules/@heygen/liveavatar-web-sdk/lib/index.cjs.js b/node_modules/@heygen/liveavatar-web-sdk/lib/index.cjs.js
+--- a/node_modules/@heygen/liveavatar-web-sdk/lib/index.cjs.js
++++ b/node_modules/@heygen/liveavatar-web-sdk/lib/index.cjs.js
+@@ -1348,7 +1348,7 @@
+                     this._sessionEventSocket.send(JSON.stringify({
+                         type: "agent.speak",
+                         event_id: event_id,
+-                        audio: audioChunk,
++                        audio: btoa(audioChunk),
+                     }));
+                 }
+                 this._sessionEventSocket.send(JSON.stringify({
+diff --git a/node_modules/@heygen/liveavatar-web-sdk/lib/LiveAvatarSession/LiveAvatarSession.js b/node_modules/@heygen/liveavatar-web-sdk/lib/LiveAvatarSession/LiveAvatarSession.js
+--- a/node_modules/@heygen/liveavatar-web-sdk/lib/LiveAvatarSession/LiveAvatarSession.js
++++ b/node_modules/@heygen/liveavatar-web-sdk/lib/LiveAvatarSession/LiveAvatarSession.js
+@@ -439,7 +439,7 @@
+                     this._sessionEventSocket.send(JSON.stringify({
+                         type: "agent.speak",
+                         event_id: event_id,
+-                        audio: audioChunk,
++                        audio: btoa(audioChunk),
+                     }));
+                 }
+                 this._sessionEventSocket.send(JSON.stringify({

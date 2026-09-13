@@ -67,9 +67,28 @@ Evaluate the student using the SAME criteria below.
 
 1. Pragmatics Progress
 Score BOTH SP1 and SP2 from 1 to 5 for pragmatic appropriateness based on:
-- Contextual Appropriateness: how well the student's language fits the situation, relationship, and social context
-- Pragmatic Appropriateness: how appropriately the student expresses meaning through tone, directness, mitigation, phrasing, and politeness
-- Response Appropriateness: how appropriately the student responds to the professor's turns, questions, or cues
+- Contextual Appropriateness: whether the student's language fits the situation, relationship, and social context
+- Pragmatic Appropriateness: whether the student expresses the intended meaning with appropriate tone, directness, mitigation, politeness, and phrasing
+- Response Appropriateness: whether the student responds appropriately and relevantly to the professor's turns, questions, and cues
+- Task Fulfillment (supporting criterion): whether the student clearly communicates the intended purpose and provides enough relevant information for the professor to respond appropriately
+
+Pragmatic appropriateness is the primary basis of each overall score.
+Task Fulfillment is supporting evidence of communicative effectiveness, not an equal or dominant scoring category.
+Task completion alone does not make a response pragmatically appropriate.
+Polite language alone does not demonstrate successful pragmatic performance when the communicative purpose is substantially unclear or incomplete.
+Return only one overall pragmatic score for SP1 and one for SP2; do not add dimension scores.
+
+Use this exact 1–5 scoring interpretation for both SP1 and SP2:
+5 = Fully pragmatically appropriate and communicatively effective. The student’s language fits the situation and relationship, uses suitable pragmatic strategies, responds appropriately to the professor, and communicates the intended purpose clearly. No meaningful pragmatic problem.
+4 = Generally pragmatically appropriate and effective. There may be a minor omission or awkward choice, but it does not meaningfully interfere with the interaction.
+3 = Partially appropriate. The student’s main intention is understandable, but a noticeable problem in contextual fit, pragmatic expression, responsiveness, or essential task information reduces effectiveness.
+2 = Mostly inappropriate or ineffective. Multiple important pragmatic problems or omissions make the interaction socially awkward or make an appropriate response difficult.
+1 = Seriously inappropriate or ineffective. The student largely fails to address the communicative purpose or substantially violates the situation, relationship, or conversational context.
+
+Score SP1 and SP2 independently using the same criteria and scale.
+Do not assume SP2 is better simply because it occurred after feedback; it may receive the same or a lower score when supported by the evidence.
+Justify every score difference with specific evidence from both transcripts.
+Distinguish improvement in pragmatic appropriateness from the simple addition of more content.
 
 Do NOT penalize for grammar or vocabulary.
 
@@ -80,14 +99,14 @@ Do NOT write generic statements such as:
 unless you explain exactly what changed.
 
 You MUST compare:
-- what was weak, missing, vague, too direct, or incomplete in SP1
-- what was added, improved, softened, clarified, or better answered in SP2
+- what was appropriate or weak, missing, vague, too direct, or incomplete in SP1
+- what improved, remained unchanged, or became less appropriate in SP2
 - why that matters in a student-professor interaction
 
 You MUST separate your explanation into three parts:
-- SP1: what was weak or inappropriate
-- SP2: what improved
-- Analysis: why this change matters in a professor-student context
+- SP1: evidence supporting its independent score
+- SP2: evidence supporting its independent score, including improvement, no change, or decline
+- Analysis: why the observed change or lack of change matters in a professor-student context
 
 Do NOT merge them into one paragraph.
 
@@ -116,7 +135,17 @@ Requirements:
 
 4. Overall Summary
 Provide a short overall summary of the student's pragmatic development across SP1 and SP2.
-This should be specific enough that the learner understands what to repeat next time.
+Give one actionable takeaway for future interactions.
+
+Output length and readability:
+- pragmatics_progress.sp1: maximum 2 concise sentences about the most important weakness in SP1; if none is supported, state that without inventing a weakness.
+- pragmatics_progress.sp2: maximum 2 concise sentences about the most important improvement or remaining weakness in SP2, accurately reflecting no change or decline when applicable.
+- pragmatics_progress.analysis: exactly 1 concise sentence explaining why the change or lack of change matters pragmatically.
+- feedback_uptake_reason: maximum 2 concise sentences identifying which feedback strategy was or was not applied.
+- evaluation_summary: maximum 2 concise sentences giving one actionable takeaway for future interactions.
+- Use learner-friendly, direct language and only the evidence necessary to justify each judgment.
+- Each section must serve its distinct purpose; do not repeat the same evidence or explanation across multiple sections.
+- Use at most one short exact transcript quotation in each SP1 or SP2 explanation when needed. Do not include long transcript quotations.
 
 Return ONLY valid JSON in this exact structure:
 
@@ -125,18 +154,18 @@ Return ONLY valid JSON in this exact structure:
   "pragmatic_score_sp2": <integer 1-5>,
 
   "pragmatics_progress": {{
-    "sp1": "<2-3 sentences describing weaknesses in SP1>",
-    "sp2": "<2-3 sentences describing improvements in SP2>",
-    "analysis": "<1-2 sentences explaining why this change matters pragmatically>"
+    "sp1": "<maximum 2 concise sentences on the most important SP1 weakness, with necessary score evidence>",
+    "sp2": "<maximum 2 concise sentences on the most important SP2 improvement or remaining weakness, with necessary score evidence>",
+    "analysis": "<exactly 1 concise sentence explaining why the change or lack of change matters pragmatically>"
   }},
 
   "feedback_uptake_label": "<yes|partial|no>",
-  "feedback_uptake_reason": "<2-4 sentences. Mention applied strategies, missing strategies if any, and evidence from SP2.>",
+  "feedback_uptake_reason": "<maximum 2 concise sentences identifying which feedback strategy was or was not applied, with necessary evidence>",
 
   "problematic_lines_sp1": ["<exact student utterance>", "<exact student utterance>"],
   "improved_lines_sp2": ["<exact student utterance>", "<exact student utterance>"],
 
-  "evaluation_summary": "<2-4 sentences. Specific, learner-facing, and actionable.>"
+  "evaluation_summary": "<maximum 2 concise sentences giving one actionable takeaway for future interactions>"
 }}
 """
 

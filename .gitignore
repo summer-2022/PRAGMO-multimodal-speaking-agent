@@ -13,6 +13,8 @@ venv/
 
 # Environment variables
 .env
+.env.*
+!.env.example
 
 # =========================
 # Node.js / Frontend
@@ -29,12 +31,18 @@ dist/
 # OS files
 # =========================
 .DS_Store
+__MACOSX/
 
 # =========================
 # Project outputs
 # =========================
 backend/results/
 backend/data/
+liveavatar_test/
+
+# Deployment state
+.firebase/
+firebase-debug.log
 
 # =========================
 # Cache / Coverage

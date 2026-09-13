@@ -7,11 +7,16 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "patch-package --error-on-fail",
+    "test:pcm": "node --test scripts/verify-liveavatar-pcm.mjs",
+    "test:dialogue": "node --test scripts/verify-dialogue.mjs",
+    "test:integration": "node --test scripts/verify-feedback-integration.mjs"
   },
   "dependencies": {
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "@heygen/liveavatar-web-sdk": "0.0.18"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
@@ -22,6 +27,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
-    "vite": "^8.0.4"
+    "vite": "^8.0.4",
+    "patch-package": "8.0.1"
   }
 }

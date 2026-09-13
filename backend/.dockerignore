@@ -1,0 +1,10 @@
+.env
+.env.*
+.venv/
+.venv_realtime/
+__pycache__/
+*.py[cod]
+tests/
+results/
+data/
+.DS_Store

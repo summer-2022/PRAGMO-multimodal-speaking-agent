@@ -1,0 +1,6 @@
+{
+  "turnDelayMs": {
+    "Professor": 350,
+    "Student": 450
+  }
+}

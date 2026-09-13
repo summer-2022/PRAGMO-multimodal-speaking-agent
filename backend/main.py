@@ -2,37 +2,55 @@ import asyncio
 import base64
 import json
 import os
+from typing import Literal
 
 from dotenv import load_dotenv
 
 import websockets
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictStr
 
 from config.scenarios import get_scenario
 from services.analysis_service import analyze_transcript
 from services.evaluation_service import evaluate_session
 from services.session_service import save_session_result
 from services.video_service import generate_feedback_video
+from services.liveavatar_service import create_dialogue_tokens
+from services.tts_service import synthesize_speech
 
 load_dotenv()
 
 app = FastAPI()
 
+
+def parse_allowed_origins(value: str) -> list[str]:
+    origins = [origin.strip().rstrip("/") for origin in value.split(",")]
+    return list(dict.fromkeys(origin for origin in origins if origin))
+
+
+ALLOWED_ORIGINS = parse_allowed_origins(
+    os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
-OPENAI_REALTIME_URL = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview"
+OPENAI_REALTIME_URL = "wss://api.openai.com/v1/realtime?model=gpt-realtime-2.1"
 
 # 100 ms of PCM16 at 24 kHz mono = 24000 samples/s * 2 bytes * 0.1 s = 4800 bytes
 PCM_CHUNK_BYTES = 4800
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 
 
 @app.websocket("/ws")
@@ -56,7 +74,6 @@ async def websocket_endpoint(websocket: WebSocket):
 
     openai_headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "OpenAI-Beta": "realtime=v1",
     }
 
     _scenario = get_scenario("professor_extension")
@@ -81,19 +98,24 @@ async def websocket_endpoint(websocket: WebSocket):
             await openai_ws.send(json.dumps({
                 "type": "session.update",
                 "session": {
-                    "modalities": ["text", "audio"],
-                    "input_audio_format": "pcm16",
-                    "output_audio_format": "pcm16",
-                    "voice": "verse",
-                    "instructions": "You are a university professor in the U.S. Start the conversation with a short greeting. Speak naturally and keep responses to 1–2 short sentences.",
-                    "turn_detection": {
-                        "type": "server_vad",
-                        "threshold": 0.5,
-                        "prefix_padding_ms": 300,
-                        "silence_duration_ms": 500,
-                    },
-                    "input_audio_transcription": {
-                        "model": "whisper-1",
+                    "type": "realtime",
+                    "output_modalities": ["audio"],
+                    "instructions": "You are a U.S. university professor meeting a student during office hours. Begin with a neutral greeting without assuming why the student came. Respond naturally in one or two sentences. Ask no more than one question or make no more than one request per turn, and only when needed. If the student requests an assignment extension, focus on essential, typical considerations, accept sufficient answers, and conclude naturally without inventing requirements or probing minor details.",
+                    "audio": {
+                        "input": {
+                            "format": {"type": "audio/pcm", "rate": 24000},
+                            "turn_detection": {
+                                "type": "server_vad",
+                                "threshold": 0.5,
+                                "prefix_padding_ms": 300,
+                                "silence_duration_ms": 500,
+                            },
+                            "transcription": {"model": "whisper-1"},
+                        },
+                        "output": {
+                            "format": {"type": "audio/pcm", "rate": 24000},
+                            "voice": "verse",
+                        },
                     },
                 },
             }))
@@ -215,10 +237,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     event = json.loads(raw)
                     event_type = event.get("type", "")
 
-                    if event_type == "input_speech_started":
+                    if event_type == "input_audio_buffer.speech_started":
                         await websocket.send_text(json.dumps({"type": "user_speaking"}))
 
-                    elif event_type == "input_speech_stopped":
+                    elif event_type == "input_audio_buffer.speech_stopped":
                         await websocket.send_text(json.dumps({"type": "ai_speaking"}))
 
                     elif event_type == "conversation.item.input_audio_transcription.completed":
@@ -236,7 +258,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             elif session["phase"] == "sp2":
                                 session["sp2_transcript"].append(entry)
 
-                    elif event_type == "response.audio_transcript.done":
+                    elif event_type == "response.output_audio_transcript.done":
                         text = event.get("transcript", "").strip()
                         if text:
                             # Forward to frontend (unchanged)
@@ -251,7 +273,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             elif session["phase"] == "sp2":
                                 session["sp2_transcript"].append(entry)
 
-                    elif event_type == "response.audio.delta":
+                    elif event_type == "response.output_audio.delta":
                         audio_b64 = event.get("delta", "")
                         if audio_b64:
                             print(f"[audio.delta] forwarding {len(audio_b64)} base64 chars to frontend")
@@ -260,7 +282,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                 "audio": audio_b64,
                             }))
 
-                    elif event_type == "response.audio.done":
+                    elif event_type == "response.output_audio.done":
                         print("[audio.done] audio response complete")
                         await websocket.send_text(json.dumps({"type": "audio.done"}))
 
@@ -292,3 +314,30 @@ class VideoRequest(BaseModel):
 async def generate_video_endpoint(request: VideoRequest):
     result = await asyncio.to_thread(generate_feedback_video, request.video_dialogue)
     return {"video_url": result["video_url"]}
+
+
+class TTSRequest(BaseModel):
+    speaker: Literal["Professor", "Student"]
+    text: StrictStr
+
+
+@app.post("/liveavatar/dialogue-tokens")
+def dialogue_tokens_endpoint(response: Response):
+    # Synchronous routes run blocking provider calls in FastAPI's thread pool.
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return {"tokens": create_dialogue_tokens()}
+    except Exception:
+        raise HTTPException(502, "LiveAvatar token request failed") from None
+
+
+@app.post("/tts")
+def tts_endpoint(request: TTSRequest):
+    # Validate emptiness without stripping any characters from the TTS input.
+    if not request.text.strip():
+        raise HTTPException(422, "Text must not be empty")
+    try:
+        pcm = synthesize_speech(request.text, request.speaker)
+        return {"audio": base64.b64encode(pcm).decode("ascii")}
+    except Exception:
+        raise HTTPException(502, "TTS generation failed") from None
